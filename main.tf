@@ -56,6 +56,15 @@ resource "aws_internet_gateway" "itgw" {
   }
 }
 
+resource "aws_default_route_table" "Web_Proj_Route_Table" {
+  default_route_table_id = "${aws_vpc.Web_Proj_1.default_route_table_id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.itgw.id}"
+  }
+}
+
 #resource "aws_nat_gateway" "natgw" {
 #  allocation_id = "${aws_eip.Web_Proj_eip.id}"
 #  subnet_id = "${aws_subnet.public_subnet_1b.id}"
@@ -65,10 +74,27 @@ resource "aws_internet_gateway" "itgw" {
 #  vpc = true
 #}
 
+resource "aws_security_group" "Bastion_SG" {
+    name = "Bastion_SG"
+    description = "Allows my pc to Bastion Instances"
+    vpc_id = "${aws_vpc.Web_Proj_1.id}"
+
+    ingress {
+      description = "TLS from VPC"
+      from_port = 0
+      to_port = 0
+      protocol = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
 resource "aws_instance" "Web_Proj_bastion" {
 subnet_id = "${aws_subnet.public_subnet_1b.id}"
+vpc_security_group_ids = ["${aws_security_group.Bastion_SG.id}"]
 associate_public_ip_address = true
 ami = "ami-06fcc1f0bc2c8943f"
 instance_type = "t2.micro"
 key_name = "bastion_key"
 }
+
+
